@@ -1,6 +1,7 @@
 ---
 title: "ms_phewas"
 output: html_document
+author: "Wenjia Cao"
 ---
 
 ```{r setup, include=FALSE}
@@ -20,7 +21,7 @@ hpo_counts <- read.csv(file = 'phwasReadyPheno.csv')
 #hpo_counts <- subset(hpo_counts, select = -c(FamilyId, BatchId))
 hpo_counts = rename(hpo_counts, Phenotips_ID = PhenoTips_id)
 
-hpo_phecode_map = read.delim("~/Documents/HPO_phewas/hpo_cleaned_up_ones/HPO_to_phecode.txt")
+#hpo_phecode_map = read.delim("HPO_to_phecode.txt")
 
 # hpo_phecode_map <- subset(hpo_phecode_map, select = -c(term_id, phecode.string))
 # hpo_phecode_map$vocabulary_id = c(rep("hpo",dim(hpo_phecode_map)[1]))

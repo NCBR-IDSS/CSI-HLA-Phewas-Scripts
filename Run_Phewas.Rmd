@@ -1,0 +1,81 @@
+---
+title: "ms_phewas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r readcsv}
+library(PheWAS)
+library(dplyr)
+
+covar <- read.csv(file = "phwasReadyCovar.csv")
+covar = rename(covar, Phenotips_ID = sample_id)
+
+hpo_counts <- read.csv(file = 'phwasReadyPheno.csv')  
+
+#hpo_counts <- subset(hpo_counts, select = -c(FamilyId, BatchId))
+hpo_counts = rename(hpo_counts, Phenotips_ID = PhenoTips_id)
+
+hpo_phecode_map = read.delim("~/Documents/HPO_phewas/hpo_cleaned_up_ones/HPO_to_phecode.txt")
+
+# hpo_phecode_map <- subset(hpo_phecode_map, select = -c(term_id, phecode.string))
+# hpo_phecode_map$vocabulary_id = c(rep("hpo",dim(hpo_phecode_map)[1]))
+# hpo_phecode_map <- hpo_phecode_map %>% select(vocabulary_id, everything())
+# hpo_phecode_map = rename(hpo_phecode_map, code = name)
+# hpo_phecode_map$phecode <- as.character(hpo_phecode_map$phecode)  
+```
+
+
+```{r prep}
+phenotypes = createPhenotypes(hpo_counts, min.code.count=1, 
+           add.phecode.exclusions=T, translate=T, id.sex = covar[c("Phenotips_ID","predicted_sex")], 
+           full.population.ids=unique(hpo_counts[[1]]),
+           aggregate.fun=sum)  
+
+```
+
+
+
+```{r runPhe}
+HLAA = read.csv(file = 'HLA-A_geno.csv')
+subcovs = covar[c("Phenotips_ID","predicted_sex","Age","Age_sq","PC1","PC2","PC3","PC4")]
+HLAA_2digit_allele = names(HLAA)
+#Combine the data
+HLAAdata=inner_join(inner_join(phenotypes,HLAA),subcovs)
+#Run the PheWAS
+HLAAresults=phewas_ext(HLAAdata,phenotypes=names(phenotypes)[-1],genotypes=HLAA_2digit_allele[2:73],
+                   covariates=c("predicted_sex","Age","Age_sq","PC1","PC2","PC3","PC4"), cores=2)
+#Plot the results
+phewasManhattan(HLAAresults, 
+                title="MS added HLAA HPO PheWAS Manhattan Plot")
+#Add PheWAS descriptions
+results_d=addPhecodeInfo(HLAAresults)
+
+write.csv(results_d,"HLA_A_result2022.csv", row.names = FALSE)
+```
+
+
+```{r runDQB}
+DQB = read.csv(file = 'HLA-DQB1_geno.csv')
+
+DQB_2digit_allele = names(DQB)
+#Combine the data
+QDBdata=inner_join(inner_join(phenotypes,DQB),subcovs)
+#Run the PheWAS
+DQBresults=phewas_ext(QDBdata,phenotypes=names(phenotypes)[-1],genotypes=DQB_2digit_allele[2:26],
+                   covariates=c("predicted_sex","Age","Age_sq","PC1","PC2","PC3","PC4"), cores=4)
+#Plot the results
+phewasManhattan(DQBresults, 
+                title="DQB HPO PheWAS Manhattan Plot")
+
+results_d=addPhecodeInfo(DQBresults)
+
+write.csv(results_d,"HLA_DQB_result.csv", row.names = FALSE)
+
+```
+
+
